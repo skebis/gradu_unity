@@ -8,6 +8,8 @@ using UnityEngine.Tilemaps;
 
 public class AgentScript : Agent
 {
+    [SerializeField] private bool useAStar;
+
     [SerializeField] private Transform Target;
 
     [SerializeField] private Tilemap groundTileMap;
@@ -34,12 +36,13 @@ public class AgentScript : Agent
     // Start is called before the first frame update
     void Start()
     {
-
+        
     }
 
     public override void Heuristic(in ActionBuffers actionsOut)
     {
-        int dirX = 0, dirY = 0;
+
+        /*int dirX = 0, dirY = 0;
 
         var movement = actionsOut.DiscreteActions[0];
 
@@ -74,7 +77,7 @@ public class AgentScript : Agent
         if (!normVector.Equals(Vector2.zero))
         {
             Move(normVector);
-        }
+        }*/
     }
 
     public override void OnEpisodeBegin()
