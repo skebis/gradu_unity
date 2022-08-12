@@ -10,33 +10,46 @@ public class AgentScript : Agent
 {
     [SerializeField] private bool useAStar;
 
-    [SerializeField] private Transform Target;
+    private Vector3 target;
 
-    [SerializeField] private Tilemap groundTileMap;
-    [SerializeField] private Tilemap colTileMap;
-    [SerializeField] private Tilemap startTileMap;
-    [SerializeField] private Tilemap endTileMap;
+    private Tilemap groundTileMap;
+    private Tilemap colTileMap;
+    //private Tilemap startTileMap;
+    private Tilemap endTileMap;
 
-    [SerializeField] private Transform startPos;
+    private Vector3 startPos;
 
-    [SerializeField] private int minimY;
-    [SerializeField] private int maximY;
+    private int minimY;
+    private int maximY;
 
-    [SerializeField] private int minimX;
-    [SerializeField] private int maximX;
-
-    private int maxDistanceX = 20;
-
-    private int maxDistanceY = 10;
-
-    private int count;
+    private int minimX;
+    private int maximX;
 
     //private float timer;
+
+    void Awake()
+    {
+        groundTileMap = GameObject.FindGameObjectWithTag("Walkable").GetComponent<Tilemap>();
+        colTileMap = GameObject.FindGameObjectWithTag("Col").GetComponent<Tilemap>();
+        //startTileMap = GameObject.FindGameObjectWithTag("Start").GetComponent<Tilemap>();
+        endTileMap = GameObject.FindGameObjectWithTag("End").GetComponent<Tilemap>();
+    }
 
     // Start is called before the first frame update
     void Start()
     {
-        
+        startPos = this.gameObject.transform.position;
+
+        groundTileMap.CompressBounds();
+        colTileMap.CompressBounds();
+        endTileMap.CompressBounds();
+
+        minimY = colTileMap.cellBounds.yMin;
+        maximY = colTileMap.cellBounds.yMax;
+        minimX = colTileMap.cellBounds.xMin;
+        maximX = colTileMap.cellBounds.xMax;
+
+        target = new Vector3(endTileMap.cellBounds.xMin, endTileMap.cellBounds.yMin, 0);
     }
 
     public override void Heuristic(in ActionBuffers actionsOut)
@@ -82,7 +95,7 @@ public class AgentScript : Agent
 
     public override void OnEpisodeBegin()
     {
-        this.transform.localPosition = startPos.position;
+        this.transform.localPosition = startPos;
         //timer = 0;
     }
 
@@ -106,13 +119,18 @@ public class AgentScript : Agent
 
         float distanceNormalizedX = (distanceX - minDistanceX) / (maxDistanceX - minDistanceX);
         float distanceNormalizedY = (distanceY - minDistanceY) / (maxDistanceY - minDistanceY);*/
+        var observationAgentX = (this.transform.position.x - minimX) / (maximX - minimX);
+        var observationAgentY = (this.transform.position.y - minimY) / (maximY - minimY);
 
-        sensor.AddObservation((this.transform.position.x - minimX) / (maximX - minimX));
-        sensor.AddObservation((this.transform.position.y - minimY) / (maximY - minimY));
-        sensor.AddObservation((Target.position.x - minimX) / (maximX - minimX));
-        sensor.AddObservation((Target.position.y - minimY) / (maximY - minimY));
-        sensor.AddObservation((Mathf.Abs(this.transform.position.x) + Mathf.Abs(Target.position.x)) / maxDistanceX);
-        sensor.AddObservation((Mathf.Abs(this.transform.position.y) + Mathf.Abs(Target.position.y)) / maxDistanceY);
+        var observationEndTileX = (target.x - minimX) / (maximX - minimX);
+        var observationEndTileY = (target.y - minimY) / (maximY - minimY);
+
+        sensor.AddObservation(observationAgentX);
+        sensor.AddObservation(observationAgentY);
+        sensor.AddObservation(observationEndTileX);
+        sensor.AddObservation(observationEndTileY);
+        sensor.AddObservation((Mathf.Abs(this.transform.position.x) + Mathf.Abs(target.x)) / maximX);
+        sensor.AddObservation((Mathf.Abs(this.transform.position.y) + Mathf.Abs(target.y)) / maximY);
     }
 
     public override void OnActionReceived(ActionBuffers actions)
@@ -177,7 +195,7 @@ public class AgentScript : Agent
     {
         Vector3Int gridPosition = groundTileMap.WorldToCell(this.transform.position + (Vector3)direction);
 
-        if ((!groundTileMap.HasTile(gridPosition) || colTileMap.HasTile(gridPosition)) && !endTileMap.HasTile(gridPosition))
+        if (!groundTileMap.HasTile(gridPosition) || colTileMap.HasTile(gridPosition))
         {
             return false;
         }

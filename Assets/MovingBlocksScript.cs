@@ -29,16 +29,16 @@ public class MovingBlocksScript : MonoBehaviour
         movingFlag[1] = 1;
         movingFlag[2] = 1;
 
-        StartCoroutine(MoveBlock(tilePos[0], 0));
-        StartCoroutine(MoveBlock(tilePos[1], 1));
-        StartCoroutine(MoveBlock(tilePos[2], 2));
+        StartCoroutine(MoveBlock(tilePos[0], 0, 2f));
+        StartCoroutine(MoveBlock(tilePos[1], 1, 1f));
+        StartCoroutine(MoveBlock(tilePos[2], 2, 1.5f));
     }
 
-    IEnumerator MoveBlock(Vector3Int tilePos, int index)
+    IEnumerator MoveBlock(Vector3Int tilePos, int index, float seconds)
     {
         while (true)
         {
-            yield return new WaitForSeconds(2f);
+            yield return new WaitForSeconds(seconds);
             groundTileMap.SetTile(tilePos, null);
             colTileMap.SetTile(tilePos, null);
             groundTileMap.SetTile(tilePos, freeTile);

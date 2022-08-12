@@ -6,6 +6,10 @@ TagManager:
   tags:
   - Col
   - End
+  - Walkable
+  - Start
+  - Area
+  - Canv
   layers:
   - Default
   - TransparentFX
