@@ -10,6 +10,8 @@ public class AgentScript : Agent
 {
     [SerializeField] private bool useAStar;
 
+    private GameObject areaObject;
+
     private Vector3 target;
 
     private Tilemap groundTileMap;
@@ -38,6 +40,19 @@ public class AgentScript : Agent
     // Start is called before the first frame update
     void Start()
     {
+        areaObject = GameObject.FindGameObjectWithTag("Area");
+        // hard-coded area camera properties
+        if (areaObject.name == "Area1")
+        {
+            Camera.main.transform.position = new Vector3(0, 0, -10f);
+            Camera.main.orthographicSize = 5f;
+        }
+        else if (areaObject.name == "Area2")
+        {
+            Camera.main.transform.position = new Vector3(30f, -1.5f, -10f);
+            Camera.main.orthographicSize = 8.5f;
+        }
+
         startPos = this.gameObject.transform.position;
 
         groundTileMap.CompressBounds();

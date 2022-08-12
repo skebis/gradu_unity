@@ -583,6 +583,14 @@ PrefabInstance:
       propertyPath: m_Enabled
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 5230186134397655143, guid: d52a06bb2ef344a4f9465921d585a031, type: 3}
+      propertyPath: m_Model
+      value: 
+      objectReference: {fileID: 5022602860645237092, guid: 2834eb82e83b0d0448e2892ef2013b46, type: 3}
+    - target: {fileID: 5230186134397655143, guid: d52a06bb2ef344a4f9465921d585a031, type: 3}
+      propertyPath: m_BehaviorType
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 5230186134397655165, guid: d52a06bb2ef344a4f9465921d585a031, type: 3}
       propertyPath: m_Name
       value: Agent
@@ -7225,6 +7233,14 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5230186134397655140, guid: d52a06bb2ef344a4f9465921d585a031, type: 3}
       propertyPath: m_Enabled
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5230186134397655143, guid: d52a06bb2ef344a4f9465921d585a031, type: 3}
+      propertyPath: m_Model
+      value: 
+      objectReference: {fileID: 5022602860645237092, guid: acbe581c74c72224787ef20225b95792, type: 3}
+    - target: {fileID: 5230186134397655143, guid: d52a06bb2ef344a4f9465921d585a031, type: 3}
+      propertyPath: m_BehaviorType
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 5230186134397655165, guid: d52a06bb2ef344a4f9465921d585a031, type: 3}
