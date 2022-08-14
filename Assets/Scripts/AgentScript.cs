@@ -31,10 +31,28 @@ public class AgentScript : Agent
 
     void Awake()
     {
-        groundTileMap = GameObject.FindGameObjectWithTag("Walkable").GetComponent<Tilemap>();
-        colTileMap = GameObject.FindGameObjectWithTag("Col").GetComponent<Tilemap>();
+        //groundTileMap = GameObject.FindGameObjectWithTag("Walkable").GetComponent<Tilemap>();
+        //colTileMap = GameObject.FindGameObjectWithTag("Col").GetComponent<Tilemap>();
         //startTileMap = GameObject.FindGameObjectWithTag("Start").GetComponent<Tilemap>();
-        endTileMap = GameObject.FindGameObjectWithTag("End").GetComponent<Tilemap>();
+        //endTileMap = GameObject.FindGameObjectWithTag("End").GetComponent<Tilemap>();
+
+        var tilemaps = this.gameObject.transform.parent.GetComponentsInChildren<Tilemap>();
+
+        foreach (var tilemap in tilemaps)
+        {
+            if (tilemap.gameObject.CompareTag("Walkable"))
+            {
+                groundTileMap = tilemap;
+            }
+            else if (tilemap.gameObject.CompareTag("Col"))
+            {
+                colTileMap = tilemap;
+            }
+            else if (tilemap.gameObject.CompareTag("End"))
+            {
+                endTileMap = tilemap;
+            }
+        }
     }
 
     // Start is called before the first frame update
@@ -53,7 +71,7 @@ public class AgentScript : Agent
             Camera.main.orthographicSize = 8.5f;
         }
 
-        startPos = this.gameObject.transform.position;
+        startPos = this.gameObject.transform.localPosition;
 
         groundTileMap.CompressBounds();
         colTileMap.CompressBounds();
@@ -63,8 +81,11 @@ public class AgentScript : Agent
         maximY = colTileMap.cellBounds.yMax;
         minimX = colTileMap.cellBounds.xMin;
         maximX = colTileMap.cellBounds.xMax;
+        Debug.Log(minimY + " " + maximY + " " + minimX + " " + maximX);
 
         target = new Vector3(endTileMap.cellBounds.xMin, endTileMap.cellBounds.yMin, 0);
+
+
     }
 
     public override void Heuristic(in ActionBuffers actionsOut)
@@ -134,18 +155,21 @@ public class AgentScript : Agent
 
         float distanceNormalizedX = (distanceX - minDistanceX) / (maxDistanceX - minDistanceX);
         float distanceNormalizedY = (distanceY - minDistanceY) / (maxDistanceY - minDistanceY);*/
-        var observationAgentX = (this.transform.position.x - minimX) / (maximX - minimX);
-        var observationAgentY = (this.transform.position.y - minimY) / (maximY - minimY);
+        var observationAgentX = (this.transform.localPosition.x - minimX) / (maximX - minimX);
+        var observationAgentY = (this.transform.localPosition.y - minimY) / (maximY - minimY);
 
         var observationEndTileX = (target.x - minimX) / (maximX - minimX);
         var observationEndTileY = (target.y - minimY) / (maximY - minimY);
+
+        var observationDistanceX = Mathf.Abs(target.x - this.transform.localPosition.x) / (maximX - minimX);
+        var observationDistanceY = Mathf.Abs(target.y - this.transform.localPosition.y) / (maximY - minimY);
 
         sensor.AddObservation(observationAgentX);
         sensor.AddObservation(observationAgentY);
         sensor.AddObservation(observationEndTileX);
         sensor.AddObservation(observationEndTileY);
-        sensor.AddObservation((Mathf.Abs(this.transform.position.x) + Mathf.Abs(target.x)) / maximX);
-        sensor.AddObservation((Mathf.Abs(this.transform.position.y) + Mathf.Abs(target.y)) / maximY);
+        sensor.AddObservation(observationDistanceX);
+        sensor.AddObservation(observationDistanceY);
     }
 
     public override void OnActionReceived(ActionBuffers actions)
@@ -157,38 +181,38 @@ public class AgentScript : Agent
         {
             dirX = -1;
         }
-        if (movement == 2)
+        else if (movement == 2)
         {
             dirX = 1;
         }
-        if (movement == 3)
+        else if (movement == 3)
         {
             dirY = -1;
         }
-        if (movement == 4)
+        else if (movement == 4)
         {
             dirY = 1;
         }
 
         var normVector = new Vector2(dirX, dirY);
 
-        AddReward(-0.01f);
+        AddReward(-0.05f);
         if (!Move(normVector))
         {
-            AddReward(-0.001f);
+            AddReward(-0.05f);
         }
 
         if (OnEndTile())
         {
             Debug.Log("tultiin maaliin");
-            AddReward(1.0f);
+            AddReward(10.0f);
             EndEpisode();
         }
     }
 
     private bool OnEndTile()
     {
-        Vector3Int gridPos = endTileMap.WorldToCell(this.transform.position);
+        Vector3Int gridPos = endTileMap.WorldToCell(this.transform.localPosition);
         if (endTileMap.HasTile(gridPos))
         {
             return true;
@@ -198,17 +222,29 @@ public class AgentScript : Agent
 
     private bool Move(Vector2 direction)
     {
+        // Use delay to slow down movement.
+        //StartCoroutine(DelayedMovement(0.1f));
         if (CanMove(direction))
         {
-            transform.position += (Vector3)direction;
+            transform.localPosition += (Vector3)direction;
             return true;
         }
         else return false;
     }
 
+    private IEnumerator DelayedMovement(float delay)
+    {
+        while(true)
+        {
+            yield return new WaitForSeconds(delay);
+            break;
+        }
+        yield return null;
+    }
+
     private bool CanMove(Vector2 direction)
     {
-        Vector3Int gridPosition = groundTileMap.WorldToCell(this.transform.position + (Vector3)direction);
+        Vector3Int gridPosition = groundTileMap.WorldToCell(this.transform.localPosition + (Vector3)direction);
 
         if (!groundTileMap.HasTile(gridPosition) || colTileMap.HasTile(gridPosition))
         {
