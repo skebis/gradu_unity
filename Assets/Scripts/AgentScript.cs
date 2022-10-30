@@ -8,15 +8,12 @@ using UnityEngine.Tilemaps;
 
 public class AgentScript : Agent
 {
-    [SerializeField] private bool useAStar;
-
     private GameObject areaObject;
 
     private Vector3 target;
 
     private Tilemap groundTileMap;
     private Tilemap colTileMap;
-    //private Tilemap startTileMap;
     private Tilemap endTileMap;
 
     private Vector3 startPos;
@@ -70,6 +67,11 @@ public class AgentScript : Agent
             Camera.main.transform.position = new Vector3(30f, -1.5f, -10f);
             Camera.main.orthographicSize = 8.5f;
         }
+        else if (areaObject.name == "Area3")
+        {
+            Camera.main.transform.position = new Vector3(0f, 9f, -10f);
+            Camera.main.orthographicSize = 28f;
+        }
 
         startPos = this.gameObject.transform.localPosition;
 
@@ -81,11 +83,8 @@ public class AgentScript : Agent
         maximY = colTileMap.cellBounds.yMax;
         minimX = colTileMap.cellBounds.xMin;
         maximX = colTileMap.cellBounds.xMax;
-        Debug.Log(minimY + " " + maximY + " " + minimX + " " + maximX);
 
         target = new Vector3(endTileMap.cellBounds.xMin, endTileMap.cellBounds.yMin, 0);
-
-
     }
 
     public override void Heuristic(in ActionBuffers actionsOut)
@@ -164,10 +163,10 @@ public class AgentScript : Agent
         var observationDistanceX = Mathf.Abs(target.x - this.transform.localPosition.x) / (maximX - minimX);
         var observationDistanceY = Mathf.Abs(target.y - this.transform.localPosition.y) / (maximY - minimY);
 
-        sensor.AddObservation(observationAgentX);
-        sensor.AddObservation(observationAgentY);
-        sensor.AddObservation(observationEndTileX);
-        sensor.AddObservation(observationEndTileY);
+        //sensor.AddObservation(observationAgentX);
+        //sensor.AddObservation(observationAgentY);
+        //sensor.AddObservation(observationEndTileX);
+        //sensor.AddObservation(observationEndTileY);
         sensor.AddObservation(observationDistanceX);
         sensor.AddObservation(observationDistanceY);
     }
@@ -199,7 +198,7 @@ public class AgentScript : Agent
         AddReward(-0.05f);
         if (!Move(normVector))
         {
-            AddReward(-0.05f);
+            AddReward(-1f);
         }
 
         if (OnEndTile())
@@ -209,6 +208,16 @@ public class AgentScript : Agent
             EndEpisode();
         }
     }
+
+    /*private void OnCollisionEnter2D(Collision2D collision)
+    {
+        if (collision.gameObject.CompareTag("End"))
+        {
+            Debug.Log("tultiin maaliin");
+            AddReward(10.0f);
+            EndEpisode();
+        }
+    }*/
 
     private bool OnEndTile()
     {

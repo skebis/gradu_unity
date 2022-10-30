@@ -51,8 +51,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_BrainParameters:
-    VectorObservationSize: 6
-    NumStackedVectorObservations: 1
+    VectorObservationSize: 2
+    NumStackedVectorObservations: 5
     m_ActionSpec:
       m_NumContinuousActions: 0
       BranchSizes: 05000000
@@ -150,7 +150,6 @@ MonoBehaviour:
     maxStep: 0
   hasUpgradedFromAgentParameters: 1
   MaxStep: 5000
-  useAStar: 0
 --- !u!61 &5230186134397655136
 BoxCollider2D:
   m_ObjectHideFlags: 0
@@ -207,10 +206,10 @@ MonoBehaviour:
   m_DetectableTags:
   - Col
   - End
-  m_RaysPerDirection: 4
+  m_RaysPerDirection: 6
   m_MaxRayDegrees: 180
   m_SphereCastRadius: 0.2
-  m_RayLength: 3
+  m_RayLength: 15
   m_RayLayerMask:
     serializedVersion: 2
     m_Bits: 768

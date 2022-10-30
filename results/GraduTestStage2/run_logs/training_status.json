@@ -9,15 +9,24 @@
                 "auxillary_file_paths": [
                     "results\\GraduTestStage2\\GraduTest\\GraduTest-9639.pt"
                 ]
+            },
+            {
+                "steps": 12267,
+                "file_path": "results\\GraduTestStage2\\GraduTest\\GraduTest-12267.onnx",
+                "reward": null,
+                "creation_time": 1660545640.977382,
+                "auxillary_file_paths": [
+                    "results\\GraduTestStage2\\GraduTest\\GraduTest-12267.pt"
+                ]
             }
         ],
         "final_checkpoint": {
-            "steps": 9639,
+            "steps": 12267,
             "file_path": "results\\GraduTestStage2\\GraduTest.onnx",
             "reward": null,
-            "creation_time": 1660476334.5589197,
+            "creation_time": 1660545640.977382,
             "auxillary_file_paths": [
-                "results\\GraduTestStage2\\GraduTest\\GraduTest-9639.pt"
+                "results\\GraduTestStage2\\GraduTest\\GraduTest-12267.pt"
             ]
         }
     },

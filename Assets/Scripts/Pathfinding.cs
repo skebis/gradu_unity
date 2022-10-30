@@ -18,7 +18,7 @@ public class Pathfinding : MonoBehaviour
     private Tilemap obstacles;
 
     private NodeBase start, end;
-    private int loopBoundary = 1000;
+    private int loopBoundary = 50000;
 
     [SerializeField]
     private Tile defaultTile;
@@ -46,6 +46,11 @@ public class Pathfinding : MonoBehaviour
         {
             Camera.main.transform.position = new Vector3(30f,-1.5f,-10f);
             Camera.main.orthographicSize = 8.5f;
+        }
+        else if (areaObject.name == "Area3")
+        {
+            Camera.main.transform.position = new Vector3(0f, 9f, -10f);
+            Camera.main.orthographicSize = 28f;
         }
 
         endTileMap = GameObject.FindGameObjectWithTag("End").GetComponent<Tilemap>();
@@ -84,6 +89,7 @@ public class Pathfinding : MonoBehaviour
         current.coord = startCoords;
         current.G = 0;
         current.H = ManhattanDistance(startCoords, end.coord);
+        Debug.Log(startCoords + " " + end.coord + " " + ManhattanDistance(startCoords, end.coord));
         openSet.TryAdd(current.coord, current);
 
         int counter = 0;
@@ -129,6 +135,7 @@ public class Pathfinding : MonoBehaviour
                     }
                 }
             }
+            Debug.Log(openSet.Count());
             openSet.Remove(current.coord);
             counter++;
 
@@ -168,7 +175,7 @@ public class Pathfinding : MonoBehaviour
             }
         }
 
-        StartCoroutine(DelayedMovement(0.1f));
+        //StartCoroutine(DelayedMovement(0.1f));
     }
 
     /// <summary>
