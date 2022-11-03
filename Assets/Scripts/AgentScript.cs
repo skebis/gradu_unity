@@ -5,9 +5,12 @@ using Unity.MLAgents;
 using Unity.MLAgents.Sensors;
 using Unity.MLAgents.Actuators;
 using UnityEngine.Tilemaps;
+using TMPro;
 
 public class AgentScript : Agent
 {
+    [SerializeField] private bool debuggable;
+
     private GameObject areaObject;
 
     private Vector3 target;
@@ -80,21 +83,48 @@ public class AgentScript : Agent
         endTileMap.CompressBounds();
 
         minimY = colTileMap.cellBounds.yMin;
-        maximY = colTileMap.cellBounds.yMax;
+        maximY = colTileMap.cellBounds.yMax-1;
         minimX = colTileMap.cellBounds.xMin;
-        maximX = colTileMap.cellBounds.xMax;
+        maximX = colTileMap.cellBounds.xMax-1;
 
-        target = new Vector3(endTileMap.cellBounds.xMin, endTileMap.cellBounds.yMin, 0);
+        target = groundTileMap.CellToLocal(new Vector3Int(endTileMap.cellBounds.xMin, endTileMap.cellBounds.yMin));
+
+        Debug.Log(target.x + " " + target.y);
+
+        if (debuggable)
+        {
+            CreateTileText();
+        }
     }
 
     public override void Heuristic(in ActionBuffers actionsOut)
     {
 
-        /*int dirX = 0, dirY = 0;
+        //int dirX = 0, dirY = 0;
+        var discreteAc = actionsOut.DiscreteActions;
+        
+        float movementFloatHorizontal = Mathf.Clamp(Input.GetAxis("Horizontal"), -1f, 1f);
+        float movementFloatVertical = Mathf.Clamp(Input.GetAxis("Vertical"), -1f, 1f);
+        //Debug.Log(movementFloatHorizontal + " " + movementFloatVertical);
 
-        var movement = actionsOut.DiscreteActions[0];
+        if (movementFloatHorizontal < 0f)
+        {
+            discreteAc[0] = 1;
+        }
+        if (movementFloatHorizontal > 0f)
+        {
+            discreteAc[0] = 2;
+        }
+        if (movementFloatVertical < 0f)
+        {
+            discreteAc[0] = 3;
+        }
+        if (movementFloatVertical > 0f)
+        {
+            discreteAc[0] = 4;
+        }
 
-        float movementFloatHorizontal = Input.GetAxis("Horizontal");
+        /*float movementFloatHorizontal = Input.GetAxis("Horizontal");
         float movementFloatVertical = Input.GetAxis("Vertical");
 
         if (Mathf.Abs(movementFloatHorizontal) > Mathf.Abs(movementFloatVertical))
@@ -118,11 +148,11 @@ public class AgentScript : Agent
             {
                 dirY = 1;
             }
-        }
-        
-        var normVector = new Vector2(dirX, dirY);
+        }*/
 
-        if (!normVector.Equals(Vector2.zero))
+        //Vector2 normVector = new Vector2(dirX, dirY);
+
+        /*if (!normVector.Equals(Vector2.zero))
         {
             Move(normVector);
         }*/
@@ -136,80 +166,119 @@ public class AgentScript : Agent
 
     public override void CollectObservations(VectorSensor sensor)
     {
-        /*int origValueX = groundTileMap.WorldToCell(this.transform.position).x;
-        int origValueY = groundTileMap.WorldToCell(this.transform.position).y;
+        float origValueX = groundTileMap.WorldToCell(this.transform.position).x;
+        float origValueY = groundTileMap.WorldToCell(this.transform.position).y;
 
-        int targetValueX = endTileMap.WorldToCell(Target.position).x;
-        int targetValueY = endTileMap.WorldToCell(Target.position).y;
+        float targetValueX = groundTileMap.WorldToCell(target).x;
+        float targetValueY = groundTileMap.WorldToCell(target).y;
 
         // normalize all vectors
-        int agentNormalizedValueX = (origValueX - minimX) / (maximX - minimX);
-        int agentNormalizedValueY = (origValueY - minimY) / (maximY - minimY);
+        float agentNormalizedValueX = (origValueX - minimX) / (maximX - minimX);
+        float agentNormalizedValueY = (origValueY - minimY) / (maximY - minimY);
 
-        int targetNormalizedValueX = (targetValueX - minimX) / (maximX - minimX);
-        int targetNormalizedValueY = (targetValueY - minimY) / (maximY - minimY);
+        float targetNormalizedValueX = (targetValueX - minimX) / (maximX - minimX);
+        float targetNormalizedValueY = (targetValueY - minimY) / (maximY - minimY);
 
-        int distanceX = Mathf.Abs(origValueX) + Mathf.Abs(targetValueX);
-        int distanceY = Mathf.Abs(origValueY) + Mathf.Abs(targetValueY);
+        float distanceX = Mathf.Abs(origValueX - targetValueX);
+        float distanceY = Mathf.Abs(origValueY - targetValueY);
 
-        float distanceNormalizedX = (distanceX - minDistanceX) / (maxDistanceX - minDistanceX);
-        float distanceNormalizedY = (distanceY - minDistanceY) / (maxDistanceY - minDistanceY);*/
-        var observationAgentX = (this.transform.localPosition.x - minimX) / (maximX - minimX);
-        var observationAgentY = (this.transform.localPosition.y - minimY) / (maximY - minimY);
+        /*float distanceNormalizedX = (distanceX - minDistanceX) / (maxDistanceX - minDistanceX);
+        float distanceNormalizedY = (distanceY - minDistanceY) / (maxDistanceY - minDistanceY);
+        float observationAgentX = (this.transform.localPosition.x - minimX) / (maximX - minimX);
+        float observationAgentY = (this.transform.localPosition.y - minimY) / (maximY - minimY);
+        
+        float observationEndTileX = (target.x - minimX) / (maximX - minimX);
+        float observationEndTileY = (target.y - minimY) / (maximY - minimY);
+        
+        float observationDistanceX = Mathf.Abs(target.x - this.transform.localPosition.x) / (maximX - minimX);
+        float observationDistanceY = Mathf.Abs(target.y - this.transform.localPosition.y) / (maximY - minimY);*/
 
-        var observationEndTileX = (target.x - minimX) / (maximX - minimX);
-        var observationEndTileY = (target.y - minimY) / (maximY - minimY);
+        float observationDistance = (distanceX + distanceY);
 
-        var observationDistanceX = Mathf.Abs(target.x - this.transform.localPosition.x) / (maximX - minimX);
-        var observationDistanceY = Mathf.Abs(target.y - this.transform.localPosition.y) / (maximY - minimY);
-
-        //sensor.AddObservation(observationAgentX);
-        //sensor.AddObservation(observationAgentY);
-        //sensor.AddObservation(observationEndTileX);
-        //sensor.AddObservation(observationEndTileY);
-        sensor.AddObservation(observationDistanceX);
-        sensor.AddObservation(observationDistanceY);
+        sensor.AddObservation(agentNormalizedValueX);
+        sensor.AddObservation(agentNormalizedValueY);
+        sensor.AddObservation(targetNormalizedValueX);
+        sensor.AddObservation(targetNormalizedValueY);
+        sensor.AddObservation(observationDistance);
     }
 
     public override void OnActionReceived(ActionBuffers actions)
     {
         int dirX = 0, dirY = 0;
+        int movement = actions.DiscreteActions[0];
 
-        var movement = actions.DiscreteActions[0];
+        /*switch (movement)
+        {
+            case 0:
+                dirX = 0;
+                dirY = 0;
+                break;
+            case 1:
+                dirX = -1;
+                dirY = 0;
+                break;
+            case 2:
+                dirX = 1;
+                dirY = 0;
+                break;
+            case 3:
+                dirY = -1;
+                dirX = 0;
+                break;
+            case 4:
+                dirY = 1;
+                dirX = 0;
+                break;
+        }*/
+
         if (movement == 1)
         {
             dirX = -1;
         }
-        else if (movement == 2)
+        if (movement == 2)
         {
             dirX = 1;
         }
-        else if (movement == 3)
+        if (movement == 3)
         {
             dirY = -1;
         }
-        else if (movement == 4)
+        if (movement == 4)
         {
             dirY = 1;
         }
 
-        var normVector = new Vector2(dirX, dirY);
+        var normVector = new Vector2Int(dirX, dirY);
 
-        AddReward(-0.05f);
+        float origValueX = groundTileMap.WorldToCell(this.transform.position).x;
+        float origValueY = groundTileMap.WorldToCell(this.transform.position).y;
+
+        float targetValueX = groundTileMap.WorldToCell(target).x;
+        float targetValueY = groundTileMap.WorldToCell(target).y;
+
+        float distanceX = Mathf.Abs(origValueX - targetValueX);
+        float distanceY = Mathf.Abs(origValueY - targetValueY);
+
+        if (MaxStep > 0)
+        {
+            float tempFactor = (distanceX + distanceY) * (-1);
+            AddReward(tempFactor/MaxStep);
+            Debug.Log((distanceX + distanceY));
+        }
         if (!Move(normVector))
         {
-            AddReward(-1f);
+            //AddReward(-1f);
         }
 
-        if (OnEndTile())
+        /*if (OnEndTile())
         {
             Debug.Log("tultiin maaliin");
             AddReward(10.0f);
             EndEpisode();
-        }
+        }*/
     }
 
-    /*private void OnCollisionEnter2D(Collision2D collision)
+    private void OnCollisionEnter2D(Collision2D collision)
     {
         if (collision.gameObject.CompareTag("End"))
         {
@@ -217,7 +286,7 @@ public class AgentScript : Agent
             AddReward(10.0f);
             EndEpisode();
         }
-    }*/
+    }
 
     private bool OnEndTile()
     {
@@ -229,13 +298,13 @@ public class AgentScript : Agent
         else return false;
     }
 
-    private bool Move(Vector2 direction)
+    private bool Move(Vector2Int direction)
     {
         // Use delay to slow down movement.
         //StartCoroutine(DelayedMovement(0.1f));
         if (CanMove(direction))
         {
-            transform.localPosition += (Vector3)direction;
+            transform.localPosition += (Vector3Int)direction;
             return true;
         }
         else return false;
@@ -262,6 +331,26 @@ public class AgentScript : Agent
         else
         {
             return true;
+        }
+    }
+
+    private void CreateTileText()
+    {
+        Canvas canv = GameObject.FindGameObjectWithTag("Canv").GetComponent<Canvas>();
+
+        for (int i = minimX; i <= maximX; i++)
+        {
+            for (int j = minimY; j <= maximY; j++)
+            {
+                if (groundTileMap.GetTile(new Vector3Int(i, j)) != null)
+                {
+                    Canvas tempCanv = Instantiate(canv);
+                    tempCanv.transform.SetParent(groundTileMap.gameObject.transform);
+                    tempCanv.transform.localPosition = new Vector3(i + 0.5f, j + 0.5f);
+                    TextMeshProUGUI neighbourText = tempCanv.GetComponentInChildren<TextMeshProUGUI>();
+                    neighbourText.SetText(i + ", " + j);
+                }
+            }
         }
     }
 

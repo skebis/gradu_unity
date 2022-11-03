@@ -131,8 +131,16 @@ PrefabInstance:
     m_TransformParent: {fileID: 1430561502}
     m_Modifications:
     - target: {fileID: 5230186134397655138, guid: d52a06bb2ef344a4f9465921d585a031, type: 3}
+      propertyPath: MaxStep
+      value: 10000
+      objectReference: {fileID: 0}
+    - target: {fileID: 5230186134397655138, guid: d52a06bb2ef344a4f9465921d585a031, type: 3}
       propertyPath: m_Enabled
-      value: 0
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5230186134397655138, guid: d52a06bb2ef344a4f9465921d585a031, type: 3}
+      propertyPath: debuggable
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 5230186134397655139, guid: d52a06bb2ef344a4f9465921d585a031, type: 3}
       propertyPath: m_RootOrder
@@ -177,6 +185,26 @@ PrefabInstance:
     - target: {fileID: 5230186134397655139, guid: d52a06bb2ef344a4f9465921d585a031, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5230186134397655140, guid: d52a06bb2ef344a4f9465921d585a031, type: 3}
+      propertyPath: m_Enabled
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5230186134397655142, guid: d52a06bb2ef344a4f9465921d585a031, type: 3}
+      propertyPath: DecisionPeriod
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 5230186134397655143, guid: d52a06bb2ef344a4f9465921d585a031, type: 3}
+      propertyPath: m_BehaviorType
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5230186134397655143, guid: d52a06bb2ef344a4f9465921d585a031, type: 3}
+      propertyPath: m_InferenceDevice
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5230186134397655143, guid: d52a06bb2ef344a4f9465921d585a031, type: 3}
+      propertyPath: m_BrainParameters.VectorObservationSize
+      value: 5
       objectReference: {fileID: 0}
     - target: {fileID: 5230186134397655165, guid: d52a06bb2ef344a4f9465921d585a031, type: 3}
       propertyPath: m_Name
@@ -39256,8 +39284,8 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 0.5
-  m_fontSizeBase: 0.5
+  m_fontSize: 0.3
+  m_fontSizeBase: 0.3
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
@@ -39746,7 +39774,7 @@ Tilemap:
   m_GameObject: {fileID: 1936344601}
   m_Enabled: 1
   m_Tiles:
-  - first: {x: 17, y: -9, z: 0}
+  - first: {x: 21, y: -11, z: 0}
     second:
       serializedVersion: 2
       m_TileIndex: 0
