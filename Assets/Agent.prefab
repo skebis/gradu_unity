@@ -153,6 +153,7 @@ MonoBehaviour:
   hasUpgradedFromAgentParameters: 1
   MaxStep: 3000
   debuggable: 1
+  maskActions: 1
 --- !u!61 &5230186134397655136
 BoxCollider2D:
   m_ObjectHideFlags: 0

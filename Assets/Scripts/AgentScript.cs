@@ -8,10 +8,14 @@ using UnityEngine.Tilemaps;
 using TMPro;
 using System.Linq;
 using System;
+using UnityEngine.Rendering;
 
 public class AgentScript : Agent
 {
     [SerializeField] private bool debuggable;
+
+    public float timeBetweenDecisionsAtInference;
+    float m_TimeSinceDecision;
 
     [Tooltip("Selecting will turn on action masking. Note that a model trained with action " +
         "masking turned on may not behave optimally when action masking is turned off.")]
@@ -195,8 +199,8 @@ public class AgentScript : Agent
         float targetNormalizedValueX = (targetValueX - minimX) / (maximX - minimX);
         float targetNormalizedValueY = (targetValueY - minimY) / (maximY - minimY);
 
-        float distanceX = Mathf.Abs(origValueX - targetValueX);
-        float distanceY = Mathf.Abs(origValueY - targetValueY);*/
+        float distanceXNormalized = Mathf.Abs(origValueX - targetValueX);
+        float distanceYNormalized = Mathf.Abs(origValueY - targetValueY);*/
 
         /*float distanceNormalizedX = (distanceX - minDistanceX) / (maxDistanceX - minDistanceX);
         float distanceNormalizedY = (distanceY - minDistanceY) / (maxDistanceY - minDistanceY);
@@ -213,7 +217,7 @@ public class AgentScript : Agent
         //float observationDistanceNormalized = (distanceX + distanceY)/100;
 
         sensor.AddObservation(this.transform.localPosition);
-        sensor.AddObservation(Vector2.Distance(this.transform.localPosition, target));
+        sensor.AddObservation(Vector3.Distance(this.transform.localPosition, (target + new Vector3(0.5f,0.5f,0))));
         //sensor.AddObservation(target);
         //sensor.AddObservation((target-this.transform.localPosition).normalized);
         //sensor.AddObservation(agentNormalizedValueX);
@@ -223,7 +227,7 @@ public class AgentScript : Agent
         //sensor.AddObservation(observationDistanceNormalized);
     }
 
-    /*public override void WriteDiscreteActionMask(IDiscreteActionMask actionMask)
+    public override void WriteDiscreteActionMask(IDiscreteActionMask actionMask)
     {
         // Mask the necessary actions if selected by the user.
         if (maskActions)
@@ -254,7 +258,31 @@ public class AgentScript : Agent
                 actionMask.SetActionEnabled(0, 4, false);
             }
         }
-    }*/
+    }
+
+    private void FixedUpdate()
+    {
+        WaitTimeInference();
+    }
+    void WaitTimeInference()
+    {
+        if (Academy.Instance.IsCommunicatorOn)
+        {
+            RequestDecision();
+        }
+        else
+        {
+            if (m_TimeSinceDecision >= timeBetweenDecisionsAtInference)
+            {
+                m_TimeSinceDecision = 0f;
+                RequestDecision();
+            }
+            else
+            {
+                m_TimeSinceDecision += Time.fixedDeltaTime;
+            }
+        }
+    }
 
     public override void OnActionReceived(ActionBuffers actions)
     {
@@ -301,7 +329,7 @@ public class AgentScript : Agent
             if (hit.Where(col => col.gameObject.CompareTag("End")).ToArray().Length == 1)
             {
                 Debug.Log("hit end");
-                SetReward(1f);
+                AddReward(1f);
                 EndEpisode();
             }
         }
@@ -334,9 +362,9 @@ public class AgentScript : Agent
         float distanceY = Mathf.Abs(origValueY - targetValueY);
         float tempFactor = (distanceX + distanceY) * (-1f);
         float palkkio = (tempFactor / 10000f);*/
-        float palkkio = Vector2.Distance(target,this.transform.localPosition);
+        //float palkkio = Vector2.Distance(target,this.transform.localPosition);
         //AddReward(palkkio);
-        if (waypointQueue.Count > 10)
+        /*if (waypointQueue.Count > 10)
         {
             AddReward((10+palkkio-Vector2.Distance(waypointQueue.Peek(), this.transform.localPosition))/(-5000f));
             waypointQueue.Dequeue();
@@ -345,7 +373,7 @@ public class AgentScript : Agent
         else
         {
             waypointQueue.Enqueue(this.transform.localPosition);
-        }
+        }*/
 
         //Debug.Log((10 + palkkio - Vector2.Distance(waypointQueue.Peek(), this.transform.localPosition)) / (-1000f));
 
