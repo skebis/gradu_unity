@@ -33948,7 +33948,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &1100944315
 Transform:
   m_ObjectHideFlags: 0
@@ -43412,6 +43412,14 @@ PrefabInstance:
       value: 5000
       objectReference: {fileID: 0}
     - target: {fileID: 5230186134397655138, guid: d52a06bb2ef344a4f9465921d585a031, type: 3}
+      propertyPath: debuggable
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5230186134397655138, guid: d52a06bb2ef344a4f9465921d585a031, type: 3}
+      propertyPath: maskActions
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5230186134397655138, guid: d52a06bb2ef344a4f9465921d585a031, type: 3}
       propertyPath: timeBetweenDecisionsAtInference
       value: 0.15
       objectReference: {fileID: 0}
@@ -43461,7 +43469,35 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5230186134397655141, guid: d52a06bb2ef344a4f9465921d585a031, type: 3}
       propertyPath: m_RayLength
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 5230186134397655141, guid: d52a06bb2ef344a4f9465921d585a031, type: 3}
+      propertyPath: m_RaysPerDirection
+      value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 5230186134397655141, guid: d52a06bb2ef344a4f9465921d585a031, type: 3}
+      propertyPath: m_ObservationStacks
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 5230186134397655141, guid: d52a06bb2ef344a4f9465921d585a031, type: 3}
+      propertyPath: m_RayLayerMask.m_Bits
+      value: 562
+      objectReference: {fileID: 0}
+    - target: {fileID: 5230186134397655141, guid: d52a06bb2ef344a4f9465921d585a031, type: 3}
+      propertyPath: m_DetectableTags.Array.size
       value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5230186134397655141, guid: d52a06bb2ef344a4f9465921d585a031, type: 3}
+      propertyPath: m_DetectableTags.Array.data[0]
+      value: End
+      objectReference: {fileID: 0}
+    - target: {fileID: 5230186134397655141, guid: d52a06bb2ef344a4f9465921d585a031, type: 3}
+      propertyPath: m_DetectableTags.Array.data[1]
+      value: End
+      objectReference: {fileID: 0}
+    - target: {fileID: 5230186134397655142, guid: d52a06bb2ef344a4f9465921d585a031, type: 3}
+      propertyPath: DecisionPeriod
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 5230186134397655143, guid: d52a06bb2ef344a4f9465921d585a031, type: 3}
       propertyPath: m_InferenceDevice
@@ -43469,7 +43505,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5230186134397655143, guid: d52a06bb2ef344a4f9465921d585a031, type: 3}
       propertyPath: m_BrainParameters.VectorObservationSize
-      value: 4
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5230186134397655143, guid: d52a06bb2ef344a4f9465921d585a031, type: 3}
+      propertyPath: m_BrainParameters.NumStackedVectorObservations
+      value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 5230186134397655165, guid: d52a06bb2ef344a4f9465921d585a031, type: 3}
       propertyPath: m_Name
@@ -43500,7 +43540,5 @@ PrefabInstance:
       value: Col
       objectReference: {fileID: 0}
     m_RemovedComponents:
-    - {fileID: 5230186134397655142, guid: d52a06bb2ef344a4f9465921d585a031, type: 3}
     - {fileID: 7117912956261956404, guid: d52a06bb2ef344a4f9465921d585a031, type: 3}
-    - {fileID: 5230186134397655141, guid: d52a06bb2ef344a4f9465921d585a031, type: 3}
   m_SourcePrefab: {fileID: 100100000, guid: d52a06bb2ef344a4f9465921d585a031, type: 3}

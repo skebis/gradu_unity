@@ -85,7 +85,7 @@ public class AgentScript : Agent
         else if (areaObject.name == "Area3")
         {
             Camera.main.transform.position = new Vector3(0f, 9f, -10f);
-            Camera.main.orthographicSize = 40f;
+            Camera.main.orthographicSize = 30f;
             
         }
 
@@ -95,10 +95,10 @@ public class AgentScript : Agent
         colTileMap.CompressBounds();
         endTileMap.CompressBounds();
 
-        minimY = colTileMap.cellBounds.yMin;
-        maximY = colTileMap.cellBounds.yMax-1;
-        minimX = colTileMap.cellBounds.xMin;
-        maximX = colTileMap.cellBounds.xMax-1;
+        minimY = groundTileMap.cellBounds.yMin;
+        maximY = groundTileMap.cellBounds.yMax-1;
+        minimX = groundTileMap.cellBounds.xMin;
+        maximX = groundTileMap.cellBounds.xMax-1;
 
         target = groundTileMap.CellToLocal(new Vector3Int(endTileMap.cellBounds.xMin, endTileMap.cellBounds.yMin));
 
@@ -185,7 +185,7 @@ public class AgentScript : Agent
 
     public override void CollectObservations(VectorSensor sensor)
     {
-        /*float origValueX = groundTileMap.LocalToCell(this.transform.localPosition).x;
+        float origValueX = groundTileMap.LocalToCell(this.transform.localPosition).x;
         float origValueY = groundTileMap.LocalToCell(this.transform.localPosition).y;
 
         float targetValueX = groundTileMap.LocalToCell(target).x;
@@ -199,8 +199,8 @@ public class AgentScript : Agent
         float targetNormalizedValueX = (targetValueX - minimX) / (maximX - minimX);
         float targetNormalizedValueY = (targetValueY - minimY) / (maximY - minimY);
 
-        float distanceXNormalized = Mathf.Abs(origValueX - targetValueX);
-        float distanceYNormalized = Mathf.Abs(origValueY - targetValueY);*/
+        //float distanceXNormalized = Mathf.Abs(origValueX - targetValueX);
+        //float distanceYNormalized = Mathf.Abs(origValueY - targetValueY);
 
         /*float distanceNormalizedX = (distanceX - minDistanceX) / (maxDistanceX - minDistanceX);
         float distanceNormalizedY = (distanceY - minDistanceY) / (maxDistanceY - minDistanceY);
@@ -216,14 +216,17 @@ public class AgentScript : Agent
 
         //float observationDistanceNormalized = (distanceX + distanceY)/100;
 
-        sensor.AddObservation(this.transform.localPosition);
-        sensor.AddObservation(Vector3.Distance(this.transform.localPosition, (target + new Vector3(0.5f,0.5f,0))));
+        //sensor.AddObservation(this.transform.localPosition);
+        //sensor.AddObservation(Vector3.Distance(this.transform.localPosition, (target + new Vector3(0.5f,0.5f,0))));
         //sensor.AddObservation(target);
         //sensor.AddObservation((target-this.transform.localPosition).normalized);
         //sensor.AddObservation(agentNormalizedValueX);
         //sensor.AddObservation(agentNormalizedValueY);
         //sensor.AddObservation(targetNormalizedValueX);
         //sensor.AddObservation(targetNormalizedValueY);
+        //sensor.AddObservation(agentNormalizedValueX-targetNormalizedValueX);
+        //sensor.AddObservation(agentNormalizedValueY-targetNormalizedValueY);
+        sensor.AddObservation(StepCount/(float)MaxStep);
         //sensor.AddObservation(observationDistanceNormalized);
     }
 
@@ -262,7 +265,7 @@ public class AgentScript : Agent
 
     private void FixedUpdate()
     {
-        WaitTimeInference();
+        //WaitTimeInference();
     }
     void WaitTimeInference()
     {
@@ -291,10 +294,10 @@ public class AgentScript : Agent
             AddReward((-1f) / MaxStep);
         }
 
-        //int dirX = 0, dirY = 0;
+        int dirX = 0, dirY = 0;
         int movement = actions.DiscreteActions[0];
 
-        var targetPos = transform.localPosition;
+        /*var targetPos = transform.localPosition;
 
         switch(movement)
         {
@@ -333,9 +336,9 @@ public class AgentScript : Agent
                 EndEpisode();
             }
         }
-        else Debug.Log("hit wall");
+        else Debug.Log("hit wall");*/
 
-        /*if (movement == 1)
+        if (movement == 1)
         {
             dirX = -1;
         }
@@ -350,8 +353,8 @@ public class AgentScript : Agent
         if (movement == 4)
         {
             dirY = 1;
-        }*/
-        //var normVector = new Vector3(dirX, dirY,0f);
+        }
+        var normVector = new Vector3(dirX, dirY,0f);
         /*float origValueX = groundTileMap.LocalToCell(this.transform.localPosition).x;
         float origValueY = groundTileMap.LocalToCell(this.transform.localPosition).y;
 
@@ -373,26 +376,26 @@ public class AgentScript : Agent
         else
         {
             waypointQueue.Enqueue(this.transform.localPosition);
-        }*/
-
+        }
+        Debug.Log((10 + palkkio - Vector2.Distance(waypointQueue.Peek(), this.transform.localPosition)) / (-5000f));*/
         //Debug.Log((10 + palkkio - Vector2.Distance(waypointQueue.Peek(), this.transform.localPosition)) / (-1000f));
 
 
         //float distanceNormalized = Vector3.Distance(this.transform.localPosition,target) / Mathf.Pow((Mathf.Pow((origValueX-targetValueX),2f) + Mathf.Pow((origValueY-targetValueY),2f)),0.5f);
 
-        //Move(normVector);
+        Move(normVector);
         /*if (!Move(normVector))
         {
             AddReward(-1.0f);
             EndEpisode();
         }*/
 
-        /*if (OnEndTile())
+        if (OnEndTile())
         {
             Debug.Log("tultiin maaliin");
-            AddReward(10.0f);
+            AddReward(1.0f);
             EndEpisode();
-        }*/
+        }
     }
 
     /*private void OnCollisionEnter2D(Collision2D collision)
@@ -455,9 +458,9 @@ public class AgentScript : Agent
     {
         Canvas canv = GameObject.FindGameObjectWithTag("Canv").GetComponent<Canvas>();
 
-        for (int i = minimX; i <= maximX; i++)
+        for (int i = minimX; i < maximX; i++)
         {
-            for (int j = minimY; j <= maximY; j++)
+            for (int j = minimY; j < maximY; j++)
             {
                 if (groundTileMap.GetTile(new Vector3Int(i, j)) != null)
                 {
