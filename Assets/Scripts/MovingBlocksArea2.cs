@@ -14,17 +14,23 @@ public class MovingBlocksArea2 : MonoBehaviour
     [SerializeField] private TileBase colTile;
     [SerializeField] private TileBase freeTile;
 
-    private Vector3Int[] tilePos = new Vector3Int[3];
+    private Vector3Int[] tilePos = new Vector3Int[1];
 
     // Start is called before the first frame update
     void Start()
     {
-        tilePos[0] = new Vector3Int(27, -2, 0);
+        tilePos[0] = new Vector3Int(-7, 2, 0);
 
-        StartCoroutine(MoveBlock(tilePos[0], 0, 2f));
+        StartCoroutine(MoveBlock(tilePos[0], 2f));
     }
 
-    IEnumerator MoveBlock(Vector3Int tilePos, int index, float seconds)
+    /// <summary>
+    /// Replaces a collision block with a walkable one and vice versa.
+    /// </summary>
+    /// <param name="tilePos">Position of the replaced block.</param>
+    /// <param name="seconds">Replacement delay.</param>
+    /// <returns></returns>
+    IEnumerator MoveBlock(Vector3Int tilePos, float seconds)
     {
         while (true)
         {

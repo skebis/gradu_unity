@@ -44,8 +44,8 @@ public class Pathfinding : MonoBehaviour
         }
         else if (areaObject.name == "Area2")
         {
-            Camera.main.transform.position = new Vector3(30f,-1.5f,-10f);
-            Camera.main.orthographicSize = 8.5f;
+            Camera.main.transform.position = new Vector3(0, 0, -10f);
+            Camera.main.orthographicSize = 11f;
         }
         else if (areaObject.name == "Area3")
         {
