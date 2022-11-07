@@ -125,8 +125,11 @@ public class AgentScript : Agent
     public override void CollectObservations(VectorSensor sensor)
     {
         // Observe agent and target positions.
-        sensor.AddObservation((Vector2)this.transform.localPosition);
+        Vector2 agentPos = (Vector2)this.transform.localPosition;
+        Vector2 targetPos = (Vector2)target.localPosition;
+        sensor.AddObservation(agentPos);
         sensor.AddObservation((Vector2)target.localPosition);
+        sensor.AddObservation(Vector2.Distance(agentPos, targetPos));
     }
 
     public override void WriteDiscreteActionMask(IDiscreteActionMask actionMask)
@@ -162,10 +165,10 @@ public class AgentScript : Agent
     public override void OnActionReceived(ActionBuffers actions)
     {
         // Give small negative reward for every step to encourage fast episode completion.
-        if (MaxStep > 0)
+        /*if (MaxStep > 0)
         {
             AddReward((-1f) / MaxStep);
-        }
+        }*/
 
         int movement = actions.DiscreteActions[0];
 
@@ -189,12 +192,17 @@ public class AgentScript : Agent
             default:
                 throw new ArgumentException("No action value");
         }
-
-        // Set reward to -1 if character tried to move somewhere it cant and end the episode.
+        int a = Mathf.Abs((int)this.transform.localPosition.x - (int)target.transform.localPosition.x);
+        int b = Mathf.Abs((int)this.transform.localPosition.y - (int)target.transform.localPosition.y);
+        if (MaxStep > 0)
+        {
+            AddReward(-(a + b) / MaxStep);
+        }
+        // Give small negative reward if trying to move but cant (basically collision against wall).
         if (!Move(moveTo))
         {
-            AddReward(-1.0f);
-            EndEpisode();
+            AddReward(-0.01f);
+            //EndEpisode();
         }
     }
     

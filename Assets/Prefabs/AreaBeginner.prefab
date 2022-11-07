@@ -19771,6 +19771,10 @@ PrefabInstance:
       propertyPath: debuggable
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 5230186134397655143, guid: d52a06bb2ef344a4f9465921d585a031, type: 3}
+      propertyPath: m_BrainParameters.VectorObservationSize
+      value: 5
+      objectReference: {fileID: 0}
     - target: {fileID: 5230186134397655165, guid: d52a06bb2ef344a4f9465921d585a031, type: 3}
       propertyPath: m_Name
       value: Agent
