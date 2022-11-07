@@ -16,8 +16,6 @@ using System.Threading;
 public class AgentScript : Agent
 {
     [SerializeField] private bool debuggable;
-    [SerializeField] private TileBase endTile;
-    [SerializeField] private TileBase walkTile;
 
     [Tooltip("Selecting will turn on action masking. Note that a model trained with action " +
         "masking turned on may not behave optimally when action masking is turned off.")]
@@ -42,18 +40,8 @@ public class AgentScript : Agent
 
     private Vector2 moveTo;
 
-
-    //private Queue<Vector2> waypointQueue = new Queue<Vector2>();
-
-    //private float timer;
-
     void Awake()
     {
-        //groundTileMap = GameObject.FindGameObjectWithTag("Walkable").GetComponent<Tilemap>();
-        //colTileMap = GameObject.FindGameObjectWithTag("Col").GetComponent<Tilemap>();
-        //startTileMap = GameObject.FindGameObjectWithTag("Start").GetComponent<Tilemap>();
-        //endTileMap = GameObject.FindGameObjectWithTag("End").GetComponent<Tilemap>();
-
         var tilemaps = this.gameObject.transform.parent.GetComponentsInChildren<Tilemap>();
 
         foreach (var tilemap in tilemaps)
@@ -72,29 +60,6 @@ public class AgentScript : Agent
     // Start is called before the first frame update
     void Start()
     {
-        // hard-coded area camera properties
-        GameObject areaObject = GameObject.FindGameObjectWithTag("Area");
-        if (areaObject.name == "Area1")
-        {
-            Camera.main.transform.position = new Vector3(0, 0, -10f);
-            Camera.main.orthographicSize = 5f;
-        }
-        else if (areaObject.name == "Area2")
-        {
-            Camera.main.transform.position = new Vector3(0, 0, -10f);
-            Camera.main.orthographicSize = 11f;
-        }
-        else if (areaObject.name == "Area3")
-        {
-            Camera.main.transform.position = new Vector3(0f, 9f, -10f);
-            Camera.main.orthographicSize = 30f;
-            
-        }
-        else if (areaObject.name == "Area4")
-        {
-            Camera.main.orthographicSize = 20f;
-        }
-
         startPos = this.gameObject.transform.localPosition;
 
         groundTileMap.CompressBounds();
@@ -149,7 +114,7 @@ public class AgentScript : Agent
             LayerMask mask = LayerMask.GetMask("Collision");
             currentEndTilePos = new Vector2Int(Random.Range(minimX, maximX), Random.Range(minimY, maximY));
             Collider2D collid = Physics2D.OverlapBox(currentEndTilePos, new Vector2(2f,2f), 0f, mask);
-            if (groundTileMap.HasTile((Vector3Int)currentEndTilePos) && !collid)
+            if (groundTileMap.HasTile((Vector3Int)currentEndTilePos) && !collid && !MovingBlocksAreaDiff.ignoredSpawnPositions.Contains((Vector3Int)currentEndTilePos))
             {
                 target.localPosition = (Vector2)currentEndTilePos;
                 spawningTile = false;
@@ -296,7 +261,7 @@ public class AgentScript : Agent
                 {
                     Canvas tempCanv = Instantiate(canv);
                     tempCanv.transform.SetParent(groundTileMap.gameObject.transform);
-                    tempCanv.transform.localPosition = new Vector3(i + 0.5f, j + 0.5f);
+                    tempCanv.transform.localPosition = new Vector3(i, j);
                     TextMeshProUGUI neighbourText = tempCanv.GetComponentInChildren<TextMeshProUGUI>();
                     neighbourText.SetText(i + ", " + j);
                 }
