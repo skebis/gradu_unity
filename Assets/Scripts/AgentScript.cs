@@ -193,7 +193,7 @@ public class AgentScript : Agent
         // Set reward to -1 if character tried to move somewhere it cant and end the episode.
         if (!Move(moveTo))
         {
-            SetReward(-1.0f);
+            AddReward(-1.0f);
             EndEpisode();
         }
     }
