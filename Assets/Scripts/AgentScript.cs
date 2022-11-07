@@ -9,10 +9,16 @@ using TMPro;
 using System.Linq;
 using System;
 using UnityEngine.Rendering;
+using Unity.Mathematics;
+using Random = UnityEngine.Random;
+using System.Threading;
 
 public class AgentScript : Agent
 {
     [SerializeField] private bool debuggable;
+    [SerializeField] private TileBase endTile;
+    [SerializeField] private TileBase walkTile;
+
 
     public float timeBetweenDecisionsAtInference;
     float m_TimeSinceDecision;
@@ -23,10 +29,11 @@ public class AgentScript : Agent
 
     private GameObject areaObject;
 
-    private Vector3 target;
+    [SerializeField]private Transform target;
+
 
     private Tilemap groundTileMap;
-    private Tilemap colTileMap;
+    [SerializeField]private Tilemap colTileMap;
     private Tilemap endTileMap;
 
     private Vector3 startPos;
@@ -37,7 +44,17 @@ public class AgentScript : Agent
     private int minimX;
     private int maximX;
 
-    private Queue<Vector2> waypointQueue = new Queue<Vector2>();
+    private bool spawningTile = false;
+    private Vector2Int currentEndTilePos;
+
+    Rigidbody2D rBody;
+    public float forceMultiplier = 10;
+    public float movespeed = 5f;
+
+    private Vector2 moveTo;
+
+
+    //private Queue<Vector2> waypointQueue = new Queue<Vector2>();
 
     //private float timer;
 
@@ -60,16 +77,18 @@ public class AgentScript : Agent
             {
                 colTileMap = tilemap;
             }
-            else if (tilemap.gameObject.CompareTag("End"))
+            /*else if (tilemap.gameObject.CompareTag("End"))
             {
                 endTileMap = tilemap;
-            }
+            }*/
         }
     }
 
     // Start is called before the first frame update
     void Start()
     {
+        rBody = GetComponent<Rigidbody2D>();
+
         areaObject = GameObject.FindGameObjectWithTag("Area");
         // hard-coded area camera properties
         if (areaObject.name == "Area1")
@@ -88,21 +107,25 @@ public class AgentScript : Agent
             Camera.main.orthographicSize = 30f;
             
         }
+        else if (areaObject.name == "Area4")
+        {
+            Camera.main.orthographicSize = 20f;
+        }
 
         startPos = this.gameObject.transform.localPosition;
 
         groundTileMap.CompressBounds();
         colTileMap.CompressBounds();
-        endTileMap.CompressBounds();
+        //endTileMap.CompressBounds();
 
-        minimY = groundTileMap.cellBounds.yMin;
-        maximY = groundTileMap.cellBounds.yMax-1;
-        minimX = groundTileMap.cellBounds.xMin;
-        maximX = groundTileMap.cellBounds.xMax-1;
+        minimY = colTileMap.cellBounds.yMin;
+        maximY = colTileMap.cellBounds.yMax-1;
+        minimX = colTileMap.cellBounds.xMin;
+        maximX = colTileMap.cellBounds.xMax-1;
 
-        target = groundTileMap.CellToLocal(new Vector3Int(endTileMap.cellBounds.xMin, endTileMap.cellBounds.yMin));
+        //target = groundTileMap.CellToLocal(new Vector3Int(endTileMap.cellBounds.xMin, endTileMap.cellBounds.yMin));
 
-        Debug.Log(target.x + " " + target.y);
+        //Debug.Log(target.x + " " + target.y);
 
         if (debuggable)
         {
@@ -117,7 +140,9 @@ public class AgentScript : Agent
 
     public override void Heuristic(in ActionBuffers actionsOut)
     {
-
+        /*var continuousActionsOut = actionsOut.ContinuousActions;
+        continuousActionsOut[0] = Input.GetAxis("Horizontal");
+        continuousActionsOut[1] = Input.GetAxis("Vertical");*/
         //int dirX = 0, dirY = 0;
         var discreteAc = actionsOut.DiscreteActions;
         
@@ -178,14 +203,30 @@ public class AgentScript : Agent
 
     public override void OnEpisodeBegin()
     {
+        Debug.Log("episode begin");
+        //endTileMap.ClearAllTiles();
         //waypointQueue.Clear();
         this.transform.localPosition = startPos;
+        spawningTile = true;
+        while (spawningTile)
+        {
+            LayerMask mask = LayerMask.GetMask("Collision");
+            currentEndTilePos = new Vector2Int(Random.Range(-25, 22), Random.Range(-15, 17));
+            Collider2D collid = Physics2D.OverlapBox(currentEndTilePos, new Vector2(2f,2f), 0f, mask);
+            Debug.Log(collid);
+            if (groundTileMap.HasTile((Vector3Int)currentEndTilePos) && !collid)
+            {
+                target.localPosition = (Vector2)currentEndTilePos;
+                //endTileMap.SetTile(currentEndTilePos, endTile);
+                spawningTile = false;
+            }
+        }
         //timer = 0;
     }
 
     public override void CollectObservations(VectorSensor sensor)
     {
-        float origValueX = groundTileMap.LocalToCell(this.transform.localPosition).x;
+        /*float origValueX = groundTileMap.LocalToCell(this.transform.localPosition).x;
         float origValueY = groundTileMap.LocalToCell(this.transform.localPosition).y;
 
         float targetValueX = groundTileMap.LocalToCell(target).x;
@@ -202,7 +243,7 @@ public class AgentScript : Agent
         //float distanceXNormalized = Mathf.Abs(origValueX - targetValueX);
         //float distanceYNormalized = Mathf.Abs(origValueY - targetValueY);
 
-        /*float distanceNormalizedX = (distanceX - minDistanceX) / (maxDistanceX - minDistanceX);
+        float distanceNormalizedX = (distanceX - minDistanceX) / (maxDistanceX - minDistanceX);
         float distanceNormalizedY = (distanceY - minDistanceY) / (maxDistanceY - minDistanceY);
         float observationAgentX = (this.transform.localPosition.x - minimX) / (maximX - minimX);
         float observationAgentY = (this.transform.localPosition.y - minimY) / (maximY - minimY);
@@ -226,7 +267,12 @@ public class AgentScript : Agent
         //sensor.AddObservation(targetNormalizedValueY);
         //sensor.AddObservation(agentNormalizedValueX-targetNormalizedValueX);
         //sensor.AddObservation(agentNormalizedValueY-targetNormalizedValueY);
-        sensor.AddObservation(StepCount/(float)MaxStep);
+        //sensor.AddObservation(StepCount/(float)MaxStep);
+        
+        sensor.AddObservation((Vector2)this.transform.localPosition);
+        sensor.AddObservation((Vector2)target.localPosition);
+        //sensor.AddObservation(rBody.velocity.x);
+        //sensor.AddObservation(rBody.velocity.y);
         //sensor.AddObservation(observationDistanceNormalized);
     }
 
@@ -266,6 +312,7 @@ public class AgentScript : Agent
     private void FixedUpdate()
     {
         //WaitTimeInference();
+
     }
     void WaitTimeInference()
     {
@@ -294,51 +341,88 @@ public class AgentScript : Agent
             AddReward((-1f) / MaxStep);
         }
 
-        int dirX = 0, dirY = 0;
+        // Actions, size = 2
+        //Vector3 controlSignal = Vector3.zero;
+        /*if (actions.ContinuousActions[0] < 0)
+        {
+            controlSignal.x = -1;
+        }
+        else if (actions.ContinuousActions[0] > 0)
+        {
+            controlSignal.x = 1;
+        }
+        if (actions.ContinuousActions[1] < 0)
+        {
+            controlSignal.y = -1;
+        }
+        else if (actions.ContinuousActions[1] > 0)
+        {
+            controlSignal.y = 1;
+        }*/
+        /*controlSignal.x = actions.ContinuousActions[0];
+        controlSignal.y = actions.ContinuousActions[1];
+        
+        rBody.transform.Translate(controlSignal);*/
+
+        //int dirX = 0, dirY = 0;
         int movement = actions.DiscreteActions[0];
 
-        /*var targetPos = transform.localPosition;
+        //Vector2 targetPos = transform.localPosition;
 
         switch(movement)
         {
             case 0:
+                moveTo = Vector2.zero;
                 // do nothing
                 break;
             case 1:
-                targetPos = transform.localPosition + new Vector3(-1f,0f,0f);
-                //dirX = -1;
+                //rBody.transform.Translate(Vector2.left);
+                moveTo = new Vector2(-1,0);
+                //moveToDirection = Vector2.left;
                 break;
             case 2:
-                targetPos = transform.localPosition + new Vector3(1f, 0f, 0f);
-                //dirX = 1;
+                //rBody.transform.Translate(Vector2.right);
+                moveTo = new Vector2(1, 0);
+                //moveToDirection = Vector2.right;
                 break;
             case 3:
-                targetPos = transform.localPosition + new Vector3(0f, -1f, 0f);
-                //dirY = -1;
+                //rBody.transform.Translate(Vector2.down);
+                moveTo = new Vector2(0, -1);
+                //moveToDirection = Vector2.down;
                 break;
             case 4:
-                targetPos = transform.localPosition + new Vector3(0f, 1f, 0f);
-                //dirY = 1;
+                //rBody.transform.Translate(Vector2.up);
+                moveTo = new Vector2(0, 1);
+                //moveToDirection = Vector2.up;
                 break;
             default:
                 throw new ArgumentException("No action value");
         }
 
-        Collider2D[] hit = Physics2D.OverlapBoxAll(targetPos, new Vector3(0.3f, 0.3f, 0f), 0f);
+        //rBody.transform.position += (Vector3)moveTo;
+
+        /*Collider2D[] hit = Physics2D.OverlapBoxAll(targetPos, new Vector3(0.5f, 0.5f, 0f), 0f);
         if (hit.Where(col => col.gameObject.CompareTag("Col")).ToArray().Length == 0)
         {
             transform.localPosition = targetPos;
 
-            if (hit.Where(col => col.gameObject.CompareTag("End")).ToArray().Length == 1)
+            if (hit.Where(col => col.gameObject.CompareTag("End")).ToArray().Length >= 1)
             {
                 Debug.Log("hit end");
-                AddReward(1f);
+                SetReward(1f);
                 EndEpisode();
             }
         }
-        else Debug.Log("hit wall");*/
+        else
+        {
+            Debug.Log("hit wall");
 
-        if (movement == 1)
+            SetReward(-1f);
+            this.transform.localPosition = startPos;
+            EndEpisode();
+        }*/
+
+        /*if (movement == 1)
         {
             dirX = -1;
         }
@@ -353,8 +437,8 @@ public class AgentScript : Agent
         if (movement == 4)
         {
             dirY = 1;
-        }
-        var normVector = new Vector3(dirX, dirY,0f);
+        }*/
+        //var normVector = new Vector3(dirX, dirY,0f);
         /*float origValueX = groundTileMap.LocalToCell(this.transform.localPosition).x;
         float origValueY = groundTileMap.LocalToCell(this.transform.localPosition).y;
 
@@ -383,32 +467,39 @@ public class AgentScript : Agent
 
         //float distanceNormalized = Vector3.Distance(this.transform.localPosition,target) / Mathf.Pow((Mathf.Pow((origValueX-targetValueX),2f) + Mathf.Pow((origValueY-targetValueY),2f)),0.5f);
 
-        Move(normVector);
-        /*if (!Move(normVector))
+        //Move(normVector);
+        if (!Move(moveTo))
         {
             AddReward(-1.0f);
             EndEpisode();
-        }*/
+        }
 
-        if (OnEndTile())
+        /*if (OnEndTile())
         {
             Debug.Log("tultiin maaliin");
             AddReward(1.0f);
             EndEpisode();
-        }
+        }*/
     }
 
-    /*private void OnCollisionEnter2D(Collision2D collision)
+    private void OnTriggerEnter2D(Collider2D collision)
     {
         if (collision.gameObject.CompareTag("End"))
         {
             Debug.Log("tultiin maaliin");
-            AddReward(1.0f);
+            SetReward(1.0f);
             EndEpisode();
         }
-    }*/
+        /*else if (collision.gameObject.CompareTag("Col"))
+        {
+            Debug.Log("osui sein‰‰n");
+            SetReward(-1f);
+            this.transform.localPosition = startPos;
+            EndEpisode();
+        }*/
+    }
 
-    private bool OnEndTile()
+    /*private bool OnEndTile()
     {
         Vector3Int gridPos = endTileMap.LocalToCell(this.transform.localPosition);
         if (endTileMap.HasTile(gridPos))
@@ -416,7 +507,7 @@ public class AgentScript : Agent
             return true;
         }
         else return false;
-    }
+    }*/
 
     private bool Move(Vector3 direction)
     {
@@ -424,7 +515,7 @@ public class AgentScript : Agent
         //StartCoroutine(DelayedMovement(0.1f));
         if (CanMove(direction))
         {
-            transform.localPosition += (Vector3)direction;
+            transform.localPosition += direction;
             return true;
         }
         else return false;

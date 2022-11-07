@@ -10,6 +10,7 @@ TagManager:
   - Start
   - Area
   - Canv
+  - Agent
   layers:
   - Default
   - TransparentFX
@@ -21,7 +22,7 @@ TagManager:
   - Start
   - Collision
   - End
-  - 
+  - Agent
   - 
   - 
   - 
