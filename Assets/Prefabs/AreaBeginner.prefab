@@ -19619,7 +19619,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7004772603247843225}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalPosition: {x: 5, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -19650,7 +19650,7 @@ BoxCollider2D:
     adaptiveTiling: 0
   m_AutoTiling: 0
   serializedVersion: 2
-  m_Size: {x: 0.9, y: 0.9}
+  m_Size: {x: 0.5, y: 0.5}
   m_EdgeRadius: 0
 --- !u!212 &7004772603247843228
 SpriteRenderer:
@@ -19766,14 +19766,6 @@ PrefabInstance:
     - target: {fileID: 5230186134397655139, guid: d52a06bb2ef344a4f9465921d585a031, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 5230186134397655140, guid: d52a06bb2ef344a4f9465921d585a031, type: 3}
-      propertyPath: debuggable
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 5230186134397655143, guid: d52a06bb2ef344a4f9465921d585a031, type: 3}
-      propertyPath: m_BrainParameters.VectorObservationSize
-      value: 5
       objectReference: {fileID: 0}
     - target: {fileID: 5230186134397655165, guid: d52a06bb2ef344a4f9465921d585a031, type: 3}
       propertyPath: m_Name

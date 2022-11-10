@@ -40,6 +40,11 @@ public class AgentScript : Agent
 
     private Vector2 moveTo;
 
+    private float distanceToTarget;
+    private float previousDistanceToTarget;
+
+    private bool useIgnoredSpawnPositions = false;
+
     void Awake()
     {
         var tilemaps = this.gameObject.transform.parent.GetComponentsInChildren<Tilemap>();
@@ -60,6 +65,11 @@ public class AgentScript : Agent
     // Start is called before the first frame update
     void Start()
     {
+        if (this.gameObject.transform.parent.name.StartsWith("AreaDifficult"))
+        {
+            useIgnoredSpawnPositions = true;
+        }
+
         startPos = this.gameObject.transform.localPosition;
 
         groundTileMap.CompressBounds();
@@ -113,9 +123,15 @@ public class AgentScript : Agent
         {
             LayerMask mask = LayerMask.GetMask("Collision");
             currentEndTilePos = new Vector2Int(Random.Range(minimX, maximX), Random.Range(minimY, maximY));
-            Collider2D collid = Physics2D.OverlapBox(currentEndTilePos, new Vector2(2f,2f), 0f, mask);
-            if (groundTileMap.HasTile((Vector3Int)currentEndTilePos) && !collid && !MovingBlocksAreaDiff.ignoredSpawnPositions.Contains((Vector3Int)currentEndTilePos))
+            Collider2D collid = Physics2D.OverlapBox(currentEndTilePos, new Vector2(1f,1f), 0f, mask);
+            if (groundTileMap.HasTile((Vector3Int)currentEndTilePos) && !collid)
             {
+                // Skip this iteration if using difficult area and spawnpoint is forbidden.
+                if (useIgnoredSpawnPositions && MovingBlocksAreaDiff.ignoredSpawnPositions.Contains((Vector3Int)currentEndTilePos))
+                {
+                    Debug.Log("Forbidden spawnpoint!");
+                    continue;
+                }
                 target.localPosition = (Vector2)currentEndTilePos;
                 spawningTile = false;
             }
@@ -128,8 +144,8 @@ public class AgentScript : Agent
         Vector2 agentPos = (Vector2)this.transform.localPosition;
         Vector2 targetPos = (Vector2)target.localPosition;
         sensor.AddObservation(agentPos);
-        sensor.AddObservation((Vector2)target.localPosition);
-        sensor.AddObservation(Vector2.Distance(agentPos, targetPos));
+        sensor.AddObservation(targetPos);
+        sensor.AddObservation(Vector2.Distance(agentPos,targetPos));
     }
 
     public override void WriteDiscreteActionMask(IDiscreteActionMask actionMask)
@@ -164,15 +180,16 @@ public class AgentScript : Agent
 
     public override void OnActionReceived(ActionBuffers actions)
     {
+
         // Give small negative reward for every step to encourage fast episode completion.
-        /*if (MaxStep > 0)
+        if (MaxStep > 0)
         {
             AddReward((-1f) / MaxStep);
-        }*/
+        }
 
         int movement = actions.DiscreteActions[0];
 
-        switch(movement)
+        switch (movement)
         {
             case 0:
                 moveTo = Vector2.zero;
@@ -192,18 +209,28 @@ public class AgentScript : Agent
             default:
                 throw new ArgumentException("No action value");
         }
-        int a = Mathf.Abs((int)this.transform.localPosition.x - (int)target.transform.localPosition.x);
-        int b = Mathf.Abs((int)this.transform.localPosition.y - (int)target.transform.localPosition.y);
-        if (MaxStep > 0)
-        {
-            AddReward(-(a + b) / MaxStep);
-        }
+
         // Give small negative reward if trying to move but cant (basically collision against wall).
         if (!Move(moveTo))
         {
-            AddReward(-0.01f);
-            //EndEpisode();
+            AddReward(-1f);
+            EndEpisode();
         }
+        /*distanceToTarget = Vector2.Distance(this.transform.localPosition, target.localPosition);
+
+        if (MaxStep > 0)
+        {
+            if (distanceToTarget < previousDistanceToTarget)
+            {
+                AddReward(1f / MaxStep);
+            }
+            else
+            {
+                AddReward(-1f / MaxStep);
+            }
+            previousDistanceToTarget = distanceToTarget;
+            //AddReward(-1f / MaxStep);
+        }*/
     }
     
     /// <summary>
