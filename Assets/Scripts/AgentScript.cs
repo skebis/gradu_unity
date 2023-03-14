@@ -1,5 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using Unity.MLAgents;
 using Unity.MLAgents.Sensors;
@@ -8,14 +6,12 @@ using UnityEngine.Tilemaps;
 using TMPro;
 using System.Linq;
 using System;
-using UnityEngine.Rendering;
-using Unity.Mathematics;
 using Random = UnityEngine.Random;
-using System.Threading;
 
 public class AgentScript : Agent
 {
     [SerializeField] private bool debuggable;
+    [SerializeField] private bool testingMode;
 
     [Tooltip("Selecting will turn on action masking. Note that a model trained with action " +
         "masking turned on may not behave optimally when action masking is turned off.")]
@@ -27,7 +23,7 @@ public class AgentScript : Agent
     private Tilemap groundTileMap;
     private Tilemap colTileMap;
 
-    private Vector3 startPos;
+    private Vector3Int startPos;
 
     private int minimY;
     private int maximY;
@@ -35,15 +31,18 @@ public class AgentScript : Agent
     private int minimX;
     private int maximX;
 
-    private bool spawningTile = false;
-    private Vector2Int currentEndTilePos;
+    private bool spawningTile = true;
 
     private Vector2 moveTo;
 
-    private float distanceToTarget;
-    private float previousDistanceToTarget;
+    private Vector2Int currentEndTilePos;
 
     private bool useIgnoredSpawnPositions = false;
+
+    private readonly Color defaultColor = Color.white;
+
+    private float fullTime;
+    private int nodeCount;
 
     void Awake()
     {
@@ -65,29 +64,49 @@ public class AgentScript : Agent
     // Start is called before the first frame update
     void Start()
     {
+        // if current area is the difficult one with dynamic objects
+        // dont let target spawn on the dynamic parts.
         if (this.gameObject.transform.parent.name.StartsWith("AreaDifficult"))
         {
             useIgnoredSpawnPositions = true;
         }
 
-        startPos = this.gameObject.transform.localPosition;
+        startPos = new Vector3Int(0,0,0);
 
         groundTileMap.CompressBounds();
         colTileMap.CompressBounds();
 
         minimY = colTileMap.cellBounds.yMin;
-        maximY = colTileMap.cellBounds.yMax-1;
+        maximY = colTileMap.cellBounds.yMax-1; // y max value is top of the tile but we want bottom value.
         minimX = colTileMap.cellBounds.xMin;
-        maximX = colTileMap.cellBounds.xMax-1;
+        maximX = colTileMap.cellBounds.xMax-1; // x max value is right of the tile but we want left value.
 
         if (debuggable)
         {
             CreateTileText();
         }
+        //Time.timeScale = 0;
+        fullTime = 0f;
     }
+
+    /*private void Update()
+    {
+        fullTime += Time.deltaTime;
+        if (Input.GetMouseButtonDown(0) && testingMode)
+        {
+            Vector3 mouseWorldPos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+
+            Vector3Int mouseCell = groundTileMap.WorldToCell(mouseWorldPos);
+            mouseCell.z = 0;
+            target.position = mouseCell;
+            spawningTile = false;
+            Time.timeScale = 1;
+        }
+    }*/
 
     public override void Heuristic(in ActionBuffers actionsOut)
     {
+        // When using inference type heuristic, use arrow keys to move the agent.
         var discreteAc = actionsOut.DiscreteActions;
         
         float movementFloatHorizontal = Mathf.Clamp(Input.GetAxis("Horizontal"), -1f, 1f);
@@ -114,13 +133,15 @@ public class AgentScript : Agent
     public override void OnEpisodeBegin()
     {
         Debug.Log("episode begin");
+        ResetTileColors();
         // Reset agent position.
-        this.transform.localPosition = startPos;
-        spawningTile = true;
+        this.transform.localPosition = Vector3.zero;
+        spawningTile = false;
 
         // Spawn target on a ground tile and make sure it does not collide with walls.
-        while (spawningTile)
+        while (spawningTile && !testingMode)
         {
+            Time.timeScale = 1;
             LayerMask mask = LayerMask.GetMask("Collision");
             currentEndTilePos = new Vector2Int(Random.Range(minimX, maximX), Random.Range(minimY, maximY));
             Collider2D collid = Physics2D.OverlapBox(currentEndTilePos, new Vector2(1f,1f), 0f, mask);
@@ -140,7 +161,7 @@ public class AgentScript : Agent
 
     public override void CollectObservations(VectorSensor sensor)
     {
-        // Observe agent and target positions.
+        // Observe agent and target positions and distance between them.
         Vector2 agentPos = (Vector2)this.transform.localPosition;
         Vector2 targetPos = (Vector2)target.localPosition;
         sensor.AddObservation(agentPos);
@@ -148,39 +169,8 @@ public class AgentScript : Agent
         sensor.AddObservation(Vector2.Distance(agentPos,targetPos));
     }
 
-    public override void WriteDiscreteActionMask(IDiscreteActionMask actionMask)
-    {
-        // Mask the necessary actions if selected by the user.
-        if (maskActions)
-        {
-            // Prevents the agent from picking an action that would make it collide with a wall
-            Vector3Int gridPos = colTileMap.LocalToCell(this.transform.localPosition);
-
-            if (colTileMap.HasTile(gridPos + Vector3Int.left))
-            {
-                actionMask.SetActionEnabled(0, 1, false);
-            }
-
-            if (colTileMap.HasTile(gridPos + Vector3Int.right))
-            {
-                actionMask.SetActionEnabled(0, 2, false);
-            }
-
-            if (colTileMap.HasTile(gridPos + Vector3Int.down))
-            {
-                actionMask.SetActionEnabled(0, 3, false);
-            }
-
-            if (colTileMap.HasTile(gridPos + Vector3Int.up))
-            {
-                actionMask.SetActionEnabled(0, 4, false);
-            }
-        }
-    }
-
     public override void OnActionReceived(ActionBuffers actions)
     {
-
         // Give small negative reward for every step to encourage fast episode completion.
         if (MaxStep > 0)
         {
@@ -210,27 +200,12 @@ public class AgentScript : Agent
                 throw new ArgumentException("No action value");
         }
 
-        // Give small negative reward if trying to move but cant (basically collision against wall).
+        // Give -1 and end current episode if agent collided against a wall.
         if (!Move(moveTo))
         {
             AddReward(-1f);
             EndEpisode();
         }
-        /*distanceToTarget = Vector2.Distance(this.transform.localPosition, target.localPosition);
-
-        if (MaxStep > 0)
-        {
-            if (distanceToTarget < previousDistanceToTarget)
-            {
-                AddReward(1f / MaxStep);
-            }
-            else
-            {
-                AddReward(-1f / MaxStep);
-            }
-            previousDistanceToTarget = distanceToTarget;
-            //AddReward(-1f / MaxStep);
-        }*/
     }
     
     /// <summary>
@@ -241,7 +216,8 @@ public class AgentScript : Agent
     {
         if (collider.gameObject.CompareTag("End"))
         {
-            Debug.Log("tultiin maaliin");
+            //float endTime = Time.realtimeSinceStartup;
+            Debug.Log("Hit the target. AGENT TIME: " + GlobalTimer.globalTimer + " NodeCount: " + nodeCount);
             SetReward(1.0f);
             EndEpisode();
         }
@@ -254,6 +230,7 @@ public class AgentScript : Agent
     /// <returns>True if object was moved, false otherwise.</returns>
     private bool Move(Vector3 direction)
     {
+        nodeCount++;
         if (CanMove(direction))
         {
             transform.localPosition += direction;
@@ -277,7 +254,39 @@ public class AgentScript : Agent
         }
         else
         {
+            //PaintCurrentTile(gridPosition);
             return true;
+        }
+    }
+
+    /// <summary>
+    /// Sets tile color to blue.
+    /// </summary>
+    /// <param name="gridPosition">Current position</param>
+    private void PaintCurrentTile(Vector3Int gridPosition)
+    {
+        groundTileMap.SetTileFlags(gridPosition, TileFlags.None);
+        groundTileMap.SetColor(gridPosition, Color.blue);
+    }
+
+    /// <summary>
+    /// Resets the tile colors on walkable tiles.
+    /// </summary>
+    private void ResetTileColors()
+    {
+        BoundsInt bint = groundTileMap.cellBounds;
+
+        // go through the whole obstacle tilemap and add obstacles to isObstacle-dictionary
+        for (int i = bint.xMin; i < bint.xMax; i++)
+        {
+            for (int j = bint.yMin; j < bint.yMax; j++)
+            {
+                Vector3Int pos = new Vector3Int(i, j, 0);
+                if (groundTileMap.HasTile(pos))
+                {
+                    groundTileMap.SetColor(pos, defaultColor);
+                }
+            }
         }
     }
 
@@ -288,6 +297,7 @@ public class AgentScript : Agent
     {
         Canvas canv = GameObject.FindGameObjectWithTag("Canv").GetComponent<Canvas>();
 
+        // Loop through all the tiles and set tile indexes as text on them.
         for (int i = minimX; i < maximX; i++)
         {
             for (int j = minimY; j < maximY; j++)
@@ -300,6 +310,37 @@ public class AgentScript : Agent
                     TextMeshProUGUI neighbourText = tempCanv.GetComponentInChildren<TextMeshProUGUI>();
                     neighbourText.SetText(i + ", " + j);
                 }
+            }
+        }
+    }
+
+    public override void WriteDiscreteActionMask(IDiscreteActionMask actionMask)
+    {
+        // NOT IN USE IN THE END PRODUCT!
+        // Mask the necessary actions if selected by the user.
+        if (maskActions)
+        {
+            // Prevents the agent from picking an action that would make it collide with a wall
+            Vector3Int gridPos = colTileMap.LocalToCell(this.transform.localPosition);
+
+            if (colTileMap.HasTile(gridPos + Vector3Int.left))
+            {
+                actionMask.SetActionEnabled(0, 1, false);
+            }
+
+            if (colTileMap.HasTile(gridPos + Vector3Int.right))
+            {
+                actionMask.SetActionEnabled(0, 2, false);
+            }
+
+            if (colTileMap.HasTile(gridPos + Vector3Int.down))
+            {
+                actionMask.SetActionEnabled(0, 3, false);
+            }
+
+            if (colTileMap.HasTile(gridPos + Vector3Int.up))
+            {
+                actionMask.SetActionEnabled(0, 4, false);
             }
         }
     }

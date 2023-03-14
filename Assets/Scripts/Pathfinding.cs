@@ -5,25 +5,29 @@ using UnityEngine;
 using UnityEngine.Tilemaps;
 using Unity.Mathematics;
 using TMPro;
+using static UnityEngine.GraphicsBuffer;
 
 public class Pathfinding : MonoBehaviour
 {
     [SerializeField] private bool debuggable;
+    [SerializeField] private Transform target;
 
     private GameObject areaObject;
 
-    private Tilemap endTileMap;
-    private Tilemap startTileMap;
+    //private Tilemap endTileMap;
+    //private Tilemap startTileMap;
     private Tilemap walkableTiles;
     private Tilemap obstacles;
 
-    private NodeBase start, end;
+    private NodeBase start;
+    private NodeBase end;
+
     private int loopBoundary = 50000;
 
     [SerializeField]
     private Tile defaultTile;
 
-    private Color defaultColor = Color.white;
+    private readonly Color defaultColor = Color.white;
 
     private Dictionary<int2, bool> isObstacle = new Dictionary<int2, bool>();
     private Dictionary<int2, NodeBase> nodes = new Dictionary<int2, NodeBase>();
@@ -32,6 +36,9 @@ public class Pathfinding : MonoBehaviour
     private Stack<int2> path = new Stack<int2>();
 
     private HashSet<int2> offsets = new HashSet<int2>();
+
+    private float fullTime;
+    private int nodeCount;
 
     private void Start()
     {
@@ -53,8 +60,8 @@ public class Pathfinding : MonoBehaviour
             Camera.main.orthographicSize = 28f;
         }
 
-        endTileMap = GameObject.FindGameObjectWithTag("End").GetComponent<Tilemap>();
-        startTileMap = GameObject.FindGameObjectWithTag("Start").GetComponent<Tilemap>();
+        //endTileMap = GameObject.FindGameObjectWithTag("End").GetComponent<Tilemap>();
+        //startTileMap = GameObject.FindGameObjectWithTag("Start").GetComponent<Tilemap>();
         walkableTiles = GameObject.FindGameObjectWithTag("Walkable").GetComponent<Tilemap>();
         obstacles = GameObject.FindGameObjectWithTag("Col").GetComponent<Tilemap>();
 
@@ -65,19 +72,39 @@ public class Pathfinding : MonoBehaviour
         offsets.Add(new int2(0, -1));
         offsets.Add(new int2(1, 0));
         offsets.Add(new int2(-1, 0));
+
+        ResetNodes();
+        ResetTileColors();
+        CompressTileMaps();
+        this.transform.position = new Vector3(start.coord.x, start.coord.y, 0);
+        end.coord = new int2((int)target.position.x, (int)target.position.y);
+        nodeCount = 0;
+        fullTime = 0f;
+        FindPath(start.coord);
     }
 
-    private void Update()
+    /*private void Update()
     {
-        if (Input.GetKeyDown("space"))
+        fullTime += Time.deltaTime;
+
+        if (Input.GetMouseButtonDown(0))
         {
+            Vector3 mouseWorldPos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+
+            Vector3Int mouseCell = walkableTiles.WorldToCell(mouseWorldPos);
+            mouseCell.z = 0;
+            target.position = mouseCell;
+            end.coord = new int2(mouseCell.x, mouseCell.y);
+            start.coord = int2.zero;
+
             ResetNodes();
             ResetTileColors();
             CompressTileMaps();
-            this.transform.position = new Vector3(start.coord.x+0.5f, start.coord.y+0.5f, 0);
+            this.transform.position = new Vector3(start.coord.x, start.coord.y, 0);
+            startTime = Time.realtimeSinceStartup;
             FindPath(start.coord);
         }
-    }
+    }*/
 
     /// <summary>
     /// A* pathfinding algorithm.
@@ -89,7 +116,7 @@ public class Pathfinding : MonoBehaviour
         current.coord = startCoords;
         current.G = 0;
         current.H = ManhattanDistance(startCoords, end.coord);
-        Debug.Log(startCoords + " " + end.coord + " " + ManhattanDistance(startCoords, end.coord));
+        //Debug.Log(startCoords + " " + end.coord + " " + ManhattanDistance(startCoords, end.coord));
         openSet.TryAdd(current.coord, current);
 
         int counter = 0;
@@ -135,7 +162,6 @@ public class Pathfinding : MonoBehaviour
                     }
                 }
             }
-            Debug.Log(openSet.Count());
             openSet.Remove(current.coord);
             counter++;
 
@@ -145,7 +171,7 @@ public class Pathfinding : MonoBehaviour
         } while (openSet.Count != 0 && !current.coord.Equals(end.coord));
 
         // marking what nodes have been expanded and painting them yellow.
-        NodeBase[] nodesArray = nodes.Values.ToArray();
+        /*NodeBase[] nodesArray = nodes.Values.ToArray();
         for (int i = 0; i < nodesArray.Length; i++)
         {
             Vector3Int currentNode = new Vector3Int(nodesArray[i].coord.x, nodesArray[i].coord.y, 0);
@@ -155,27 +181,46 @@ public class Pathfinding : MonoBehaviour
                 walkableTiles.SetTileFlags(currentNode, TileFlags.None);
                 walkableTiles.SetColor(currentNode, Color.yellow);
             }
-        }
+        }*/
 
 
         // creates a path from start to end for moving purposes, painting the path blue.
         if (nodes.ContainsKey(end.coord))
         {
-            Debug.Log("painting tiles");
+            //Debug.Log("painting tiles");
             int2 currentCoord = end.coord;
             path.Push(end.coord);
 
             while (!currentCoord.Equals(startCoords))
             {
                 currentCoord = nodes[currentCoord].parent;
-                path.Push(currentCoord);
-                Vector3Int currentTile = new Vector3Int(currentCoord.x, currentCoord.y, 0);
+                Debug.Log(currentCoord);
+                if (!currentCoord.Equals(int2.zero))
+                {
+                    path.Push(currentCoord);
+
+                }
+                /*Vector3Int currentTile = new Vector3Int(currentCoord.x, currentCoord.y, 0);
                 walkableTiles.SetTileFlags(currentTile, TileFlags.None);
-                walkableTiles.SetColor(currentTile, Color.blue);
+                walkableTiles.SetColor(currentTile, Color.blue);*/
             }
         }
 
-        //StartCoroutine(DelayedMovement(0.1f));
+        StartCoroutine(DelayedMovement(0.2f));
+    }
+
+    /// <summary>
+    /// Collision detection for game object.
+    /// </summary>
+    /// <param name="collider">Collider2D that hit the object.</param>
+    private void OnTriggerEnter2D(Collider2D collider)
+    {
+        if (collider.gameObject.CompareTag("End"))
+        {
+            //float endTime = Time.realtimeSinceStartup;
+            Debug.Log("Hit the target. A* TIME: " + GlobalTimer.globalTimer + " NodeCount: " + nodeCount);
+
+        }
     }
 
     /// <summary>
@@ -184,11 +229,11 @@ public class Pathfinding : MonoBehaviour
     private void CompressTileMaps()
     {
         // start tile map only has one tile and the tile is located at bottom left corner (xmin and ymin)
-        startTileMap.CompressBounds();
-        start.coord = new int2(startTileMap.cellBounds.xMin, startTileMap.cellBounds.yMin);
+        //startTileMap.CompressBounds();
+        //start.coord = new int2(startTileMap.cellBounds.xMin, startTileMap.cellBounds.yMin);
         // end tile map only has one tile and the tile is located at bottom left corner (xmin and ymin)
-        endTileMap.CompressBounds();
-        end.coord = new int2(endTileMap.cellBounds.xMin, endTileMap.cellBounds.yMin);
+        //endTileMap.CompressBounds();
+        //end.coord = new int2(endTileMap.cellBounds.xMin, endTileMap.cellBounds.yMin);
 
         obstacles.CompressBounds();
         BoundsInt bint = obstacles.cellBounds;
@@ -250,7 +295,7 @@ public class Pathfinding : MonoBehaviour
     /// <returns></returns>
     private IEnumerator DelayedMovement(float delay)
     {
-        while (!(this.transform.position.x.Equals(end.coord.x + 0.5f) && this.transform.position.y.Equals(end.coord.y + 0.5f)))
+        while (!(this.transform.position.x.Equals(end.coord.x) && this.transform.position.y.Equals(end.coord.y)))
         {
             int2 cur = path.Pop();
             if (obstacles.HasTile(new Vector3Int(cur.x, cur.y, 0)))
@@ -258,10 +303,11 @@ public class Pathfinding : MonoBehaviour
                 ResetNodes();
                 CompressTileMaps();
                 ResetTileColors();
-                FindPath(new int2((int)(this.transform.position.x-0.5), (int)(this.transform.position.y-0.5)));
+                FindPath(new int2((int)(this.transform.position.x), (int)(this.transform.position.y)));
                 break;
             }
-            this.transform.position = new Vector3(cur.x + 0.5f, cur.y + 0.5f);
+            this.transform.position = new Vector3(cur.x, cur.y);
+            nodeCount++;
             yield return new WaitForSeconds(delay);
         }
         yield return null;
@@ -313,7 +359,7 @@ public class Pathfinding : MonoBehaviour
             neighbour.nodeCanvas = Instantiate(canv);
             neighbour.nodeCanvas.transform.SetParent(walkableTiles.gameObject.transform);
         }
-        neighbour.nodeCanvas.transform.position = new Vector3(neighbour.coord.x + 0.5f, neighbour.coord.y + 0.5f, 0);
+        neighbour.nodeCanvas.transform.position = new Vector3(neighbour.coord.x, neighbour.coord.y, 0);
         TextMeshProUGUI neighbourText = neighbour.nodeCanvas.GetComponentInChildren<TextMeshProUGUI>();
         neighbourText.SetText(neighbour.nodeText);
     }
